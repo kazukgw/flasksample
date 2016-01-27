@@ -1,0 +1,38 @@
+mysql:
+  image: mysql
+  ports:
+    - 3306:3306
+  environment:
+    MYSQL_USER: wspace
+    MYSQL_PASSWORD: password
+    MYSQL_ROOT_PASSWORD: password
+    MYSQL_DATABASE: app
+  volumes:
+    - /var/tmp/flasksample/mysql:/var/lib/mysql
+    - ./mysql/conf:/etc/mysql/conf.d
+    - ./mysql/init_db:/docker-entrypoint-initdb.d
+
+uwsgi:
+  build: ./uwsgi
+  command: uwsgi --ini /var/app/uwsgi.ini
+  links:
+    - mysql:DB
+  volumes:
+      - ./app:/var/app
+      - /var/run/sock:/var/run/sock
+      - ./site-packages:/root/.local/lib/python2.7/site-packages
+
+nginx:
+  image: nginx
+  ports:
+    - "80:80"
+  command: sh /nginx/start_nginx.sh
+  volumes:
+    - ./app:/var/app
+    - ./log/nginx:/var/log/nginx
+    - /var/run/sock:/var/run/sock
+    - ./public:/usr/share/nginx/html
+    - ./nginx:/nginx
+  environment:
+    APP_NAME: flasksample
+
